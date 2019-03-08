@@ -16,14 +16,76 @@ class Schrodinger(object):
         self.psi0 = self.psi0 / np.sqrt(self.normalization(self.psi0))
         self.V = self.set_potential(self.X, self.Y)
 
+    def plot_average_y(self, PSI):
+        average_y = np.zeros(self.T)
+        average_y2 = np.zeros(self.T)
+
+        for n in range(0, self.T - 1):
+            psi = PSI[:, n]
+            average_y[n] = trapz(trapz(self.Y * abs(psi.reshape(self.J, self.L) ** 2), self.x, dx=self.x), self.y, dx=self.dy)
+            average_y2[n] = trapz(trapz(self.Y ** 2 * abs(psi.reshape(self.J, self.L) ** 2), self.x, dx=self.x), self.y, dx=self.dy)
+
+        delta_y = np.sqrt(average_y2 - average_y)
+
+        fig, ax = plt.subplots(1, 3, figsize=(12, 7))
+        ax[0].plot(self.t, average_y)
+        ax[0].set_title('Average y')
+        ax[0].set_xlabel('$t$')
+        ax[0].set_ylabel('$y$')
+        ax[1].plot(self.t, average_y2)
+        ax[1].set_title('Average $y^2$')
+        ax[1].set_xlabel('$t$')
+        ax[1].set_ylabel('$y^2$')
+        ax[2].plot(self.t, delta_y)
+        ax[2].set_title('Uncertainity $\Delta x$')
+        ax[2].set_xlabel('$t$')
+        ax[2].set_ylabel('$\Delta y$')
+        fig.savefig('Uncertainty_y', dpi=None, facecolor='w', edgecolor='w',
+        orientation='portrait', papertype=None, format=None,
+        transparent=False, bbox_inches=None, pad_inches=0.1,
+        frameon=None, metadata=None)
+        plt.show()
+
+    def plot_average_x(self, PSI):
+        average_x = np.zeros(self.T)
+        average_x2 = np.zeros(self.T)
+
+        for n in range(0, self.T - 1):
+            psi = PSI[:, n]
+            average_x[n] = trapz(trapz(self.X * abs(psi.reshape(self.J, self.L) ** 2), self.x, dx=self.x), self.y, dx=self.dy)
+            average_x2[n] = trapz(trapz(self.X ** 2 * abs(psi.reshape(self.J, self.L) ** 2), self.x, dx=self.x), self.y, dx=self.dy)
+
+        delta_x = np.sqrt(average_x2 - average_x)
+
+        fig, ax = plt.subplots(1, 3, figsize=(12, 7))
+        ax[0].plot(self.t, average_x)
+        ax[0].set_title('Average $x$')
+        ax[0].set_xlabel('$t$')
+        ax[0].set_ylabel('$x$')
+        ax[1].plot(self.t, average_x2)
+        ax[1].set_title('Average $x^2$')
+        ax[1].set_xlabel('$t$')
+        ax[1].set_ylabel('$x^2$')
+        ax[2].plot(self.t, delta_x)
+        ax[2].set_title('Uncertainity $\Delta x$')
+        ax[2].set_xlabel('$t$')
+        ax[2].set_ylabel('$\Delta x$')
+        fig.savefig('Uncertainty_x', dpi=None, facecolor='w', edgecolor='w',
+        orientation='portrait', papertype=None, format=None,
+        transparent=False, bbox_inches=None, pad_inches=0.1,
+        frameon=None, metadata=None)
+        plt.show()
+
     def plot_normalization(self, PSI):
         normalization = np.zeros(self.T)
+
         for n in range(0, self.T - 1):
             psi = PSI[:, n]
             normalization[n] = self.normalization(psi.reshape(self.J, self.L))
         plt.plot(self.t, normalization)
-        plt.xlabel('t')
-        plt.ylabel('N')
+        plt.xlabel('$t$')
+        plt.ylabel('$N$')
+        plt.title('Normalization')
         plt.savefig('Normalization.png')
         plt.show()
 
@@ -121,17 +183,17 @@ if __name__ == '__main__':
     args = {
         'nx': 100,
         'ny': 100, 
-        'x0': -20, 
-        'xf': 20, 
-        'y0': -20,
-        'yf': 20,
-        'xa': 0, 
-        'ya': 0,
+        'x0': -40, 
+        'xf': 40, 
+        'y0': -40,
+        'yf': 40,
+        'xa': 4, 
+        'ya': 3,
         't0': 0, 
         'tf': 7.0,
-        'dt': 0.1, 
-        'sigmax': 1.0, 
-        'sigmay': 1.0,
+        'dt': 0.01, 
+        'sigmax': 2.0, 
+        'sigmay': 2.0,
         'k0x': 0,
         'k0y': 0,
         'mass': 0.5,
@@ -139,28 +201,40 @@ if __name__ == '__main__':
         }
     schrodinger = Schrodinger(**args)
     PSI = schrodinger.solve()
-    X, Y = schrodinger.get_meshgrid()
-    J, L = schrodinger.get_shape()
 
-    def update(i, PSI, surf):
-        ax.clear()
-        psi = abs(PSI[:, i].reshape(J, L) ** 2)
-        surf = ax.plot_surface(X, Y, psi, \
-        rstride=1, cstride=1, cmap='plasma')
-        ax.set_zlim(0, 0.3)
-        return surf
-    
-    frames = PSI.shape[1]
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    surf = ax.plot_surface(X, Y, abs(PSI[:, 0].reshape(J, L) ** 2), \
+    play_video = False
+
+    if play_video:
+        X, Y = schrodinger.get_meshgrid()
+        J, L = schrodinger.get_shape()
+
+        def update(i, PSI, surf):
+            ax.clear()
+            psi = abs(PSI[:, i].reshape(J, L) ** 2)
+            surf = ax.plot_surface(X, Y, psi, \
             rstride=1, cstride=1, cmap='plasma')
-    ax.set_zlim(0, 0.3)
-    ani = animation.FuncAnimation(fig, update, frames=frames,\
-            fargs=(PSI, surf), \
-            interval=30, blit=False)
+            ax.set_zlim(0, 0.3)
+            ax.set_xlabel('$x$')
+            ax.set_ylabel('$y$')
+            ax.set_zlabel('$|\Psi(x, y)|^2$')
+            return surf
+        
+        frames = PSI.shape[1]
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_xlabel('$x$')
+        ax.set_ylabel('$y$')
+        ax.set_zlabel('$|\Psi(x, y)|^2$')
+        surf = ax.plot_surface(X, Y, abs(PSI[:, 0].reshape(J, L) ** 2), \
+                rstride=1, cstride=1, cmap='plasma')
+        ax.set_zlim(0, 0.3)
+        ani = animation.FuncAnimation(fig, update, frames=frames,\
+                fargs=(PSI, surf), \
+                interval=30, blit=False)
 
-    plt.show()
+        plt.show()
 
     schrodinger.plot_normalization(PSI)
+    schrodinger.plot_average_x(PSI)
+    schrodinger.plot_average_y(PSI)
     

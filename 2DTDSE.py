@@ -89,6 +89,34 @@ class Schrodinger(object):
         plt.savefig('Normalization.png')
         plt.show()
 
+    def play_video(self, PSI):
+
+        def update(i, P, surf):
+            ax.clear()
+            psi = abs(P[:, i].reshape(self.J, self.L) ** 2)
+            surf = ax.plot_surface(self.X, self.Y, psi, \
+            rstride=1, cstride=1, cmap='plasma')
+            ax.set_zlim(0, 0.3)
+            ax.set_xlabel('$x$')
+            ax.set_ylabel('$y$')
+            ax.set_zlabel('$|\Psi(x, y)|^2$')
+            return surf
+        
+        frames = PSI.shape[1]
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_xlabel('$x$')
+        ax.set_ylabel('$y$')
+        ax.set_zlabel('$|\Psi(x, y)|^2$')
+        surf = ax.plot_surface(self.X, self.Y, abs(PSI[:, 0].reshape(self.J, self.L) ** 2), \
+                rstride=1, cstride=1, cmap='plasma')
+        ax.set_zlim(0, 0.3)
+        ani = animation.FuncAnimation(fig, update, frames=frames,\
+                fargs=(PSI, surf), \
+                interval=30, blit=False)
+
+        plt.show()
+
     def solve(self):
         U1, U2 = self.sparse_matrix()
         LU = scipy.sparse.linalg.splu(U1)
@@ -181,8 +209,8 @@ class Schrodinger(object):
 
 if __name__ == '__main__':
     args = {
-        'nx': 100,
-        'ny': 100, 
+        'nx': 200,
+        'ny': 200, 
         'x0': -40, 
         'xf': 40, 
         'y0': -40,
@@ -192,8 +220,8 @@ if __name__ == '__main__':
         't0': 0, 
         'tf': 7.0,
         'dt': 0.01, 
-        'sigmax': 2.0, 
-        'sigmay': 2.0,
+        'sigmax': 1.0, 
+        'sigmay': 1.0,
         'k0x': 0,
         'k0y': 0,
         'mass': 0.5,
@@ -201,39 +229,7 @@ if __name__ == '__main__':
         }
     schrodinger = Schrodinger(**args)
     PSI = schrodinger.solve()
-
-    play_video = False
-
-    if play_video:
-        X, Y = schrodinger.get_meshgrid()
-        J, L = schrodinger.get_shape()
-
-        def update(i, PSI, surf):
-            ax.clear()
-            psi = abs(PSI[:, i].reshape(J, L) ** 2)
-            surf = ax.plot_surface(X, Y, psi, \
-            rstride=1, cstride=1, cmap='plasma')
-            ax.set_zlim(0, 0.3)
-            ax.set_xlabel('$x$')
-            ax.set_ylabel('$y$')
-            ax.set_zlabel('$|\Psi(x, y)|^2$')
-            return surf
-        
-        frames = PSI.shape[1]
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.set_xlabel('$x$')
-        ax.set_ylabel('$y$')
-        ax.set_zlabel('$|\Psi(x, y)|^2$')
-        surf = ax.plot_surface(X, Y, abs(PSI[:, 0].reshape(J, L) ** 2), \
-                rstride=1, cstride=1, cmap='plasma')
-        ax.set_zlim(0, 0.3)
-        ani = animation.FuncAnimation(fig, update, frames=frames,\
-                fargs=(PSI, surf), \
-                interval=30, blit=False)
-
-        plt.show()
-
+    #schrodinger.play_video(PSI)
     schrodinger.plot_normalization(PSI)
     schrodinger.plot_average_x(PSI)
     schrodinger.plot_average_y(PSI)
